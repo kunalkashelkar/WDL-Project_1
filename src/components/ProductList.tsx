@@ -33,19 +33,19 @@ export function ProductList({ products }: ProductListProps) {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <article key={product.id} className="h-full">
-            <Card className="flex h-full flex-col justify-between border-border shadow-xs hover:border-foreground/20 transition-colors">
-              <CardHeader className="space-y-2">
+            <Card className="flex h-full flex-col justify-between border-border/80 bg-card/90 shadow-2xs hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200">
+              <CardHeader className="space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
+                  <span className="text-[11px] uppercase tracking-wider font-semibold text-primary/90 bg-primary/10 px-2 py-0.5 rounded-md">
                     {product.category}
                   </span>
                   {product.tag && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-[11px] font-medium border-border/60">
                       {product.tag}
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-base font-semibold leading-snug">
+                <CardTitle className="text-base font-semibold leading-snug tracking-tight text-foreground group-hover:text-primary transition-colors">
                   {product.name}
                 </CardTitle>
                 <CardDescription className="text-xs leading-relaxed text-muted-foreground line-clamp-2">
@@ -54,11 +54,14 @@ export function ProductList({ products }: ProductListProps) {
               </CardHeader>
 
               <CardContent className="pt-2">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-bold tracking-tight text-foreground">
-                    ${product.price.toFixed(2)}
-                  </span>
-                  <span className="text-xs text-muted-foreground" aria-label={`In stock: ${product.stock} items`}>
+                <div className="flex items-baseline justify-between border-t border-border/40 pt-3">
+                  <div>
+                    <span className="text-xs text-muted-foreground block text-[11px]">Price</span>
+                    <span className="text-xl font-bold tracking-tight text-foreground">
+                      ${product.price.toFixed(2)}
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full" aria-label={`In stock: ${product.stock} items`}>
                     {product.stock} in stock
                   </span>
                 </div>

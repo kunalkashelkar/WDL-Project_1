@@ -21,17 +21,17 @@ export default function Home() {
 
       <main className="flex-1 container mx-auto max-w-6xl px-4 sm:px-6 py-8">
         {/* Intro banner */}
-        <section aria-labelledby="page-heading" className="mb-8 space-y-2 border-b border-border pb-6">
-          <div className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-            WDL Assignment 1 Foundation
+        <section aria-labelledby="page-heading" className="mb-10 space-y-4 rounded-2xl border border-border/80 bg-linear-to-b from-card/80 to-card/40 p-6 sm:p-8 shadow-xs backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            WDL Assignment 1 • Production Architecture
           </div>
-          <h1 id="page-heading" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            CartFlow Checkout Experience
+          <h1 id="page-heading" className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl">
+            CartFlow <span className="text-primary">Checkout Experience</span>
           </h1>
-          <p className="max-w-2xl text-sm text-muted-foreground leading-relaxed">
-            A simple, accessible e-commerce foundation built with Next.js App Router,
-            TypeScript, Tailwind CSS, and shadcn/ui. Demonstrating accessible product catalogs,
-            order summaries, and checkout workflows.
+          <p className="max-w-2xl text-sm sm:text-base text-muted-foreground leading-relaxed">
+            A high-performance e-commerce technical demonstration powered by Next.js App Router,
+            TypeScript, Tailwind CSS, shadcn/ui primitives, persistent Zustand state, and Next.js Server Actions.
           </p>
         </section>
 

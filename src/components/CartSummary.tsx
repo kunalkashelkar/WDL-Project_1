@@ -64,11 +64,14 @@ export function CartSummary() {
         )}
       </div>
 
-      <Card className="border-border shadow-xs">
-        <CardHeader className="pb-3 border-b border-border/60">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
-            <span>Cart Items</span>
-            <span className="text-xs text-muted-foreground font-normal">
+      <Card className="border-border/80 bg-card/90 shadow-2xs backdrop-blur-xs">
+        <CardHeader className="pb-3 border-b border-border/60 bg-muted/20">
+          <CardTitle className="text-sm font-semibold flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              <span>Cart Items</span>
+            </span>
+            <span className="text-xs text-muted-foreground font-normal bg-background/80 px-2 py-0.5 rounded-md border border-border/40">
               {displayItems.length} {displayItems.length === 1 ? "item" : "items"}
             </span>
           </CardTitle>

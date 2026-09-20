@@ -32,13 +32,13 @@ export function AddToCartButton({ productId, productName, price }: AddToCartButt
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="default"
       onClick={handleAddToCart}
-      className="w-full justify-center gap-2 text-xs font-medium cursor-pointer"
+      className="w-full justify-center gap-2 text-xs font-semibold cursor-pointer shadow-xs hover:shadow-md transition-all"
       aria-label={`Add to Cart: ${productName}`}
     >
       <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-      Add to Cart
+      <span>Add to Cart</span>
     </Button>
   );
 }

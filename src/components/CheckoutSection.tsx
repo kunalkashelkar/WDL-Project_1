@@ -120,18 +120,21 @@ export function CheckoutSection() {
         </p>
       </div>
 
-      <Card className="border-border shadow-xs">
-        <CardHeader className="pb-3 border-b border-border/60">
+      <Card className="border-border/80 bg-card/90 shadow-2xs backdrop-blur-xs">
+        <CardHeader className="pb-3 border-b border-border/60 bg-muted/20">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-medium">Customer Information</CardTitle>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-primary" />
+                <span>Customer Information</span>
+              </CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
                 Validated client-side and verified by Next.js Server Action.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Lock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-              <span>SSL Secure</span>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded-md border border-border/50">
+              <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+              <span className="font-medium">SSL 256-bit</span>
             </div>
           </div>
         </CardHeader>
@@ -368,12 +371,13 @@ export function CheckoutSection() {
             <Button
               type="submit"
               form="checkout-form"
+              size="lg"
               disabled={isCartEmpty || isPending}
-              className="w-full sm:w-auto font-medium text-xs px-5 h-9 cursor-pointer gap-2"
+              className="w-full sm:w-auto font-semibold text-xs sm:text-sm px-6 cursor-pointer gap-2 shadow-sm hover:shadow-md"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   <span>Processing Order...</span>
                 </>
               ) : isCartEmpty ? (
@@ -381,7 +385,7 @@ export function CheckoutSection() {
               ) : (
                 <>
                   <span>Place Order ({mounted ? totalItemCount : 0} items)</span>
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </>
               )}
             </Button>
