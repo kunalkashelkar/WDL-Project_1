@@ -2,13 +2,22 @@ import React from "react";
 import { Product } from "@/data/products";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 interface ProductListProps {
   products: Product[];
 }
 
+/**
+ * SERVER COMPONENT
+ *
+ * Why Server Component:
+ * - Renders the product grid statically on the server without sending catalog rendering logic to the client JS bundle.
+ * - Leaves interactive event handlers isolated to the leaf <AddToCartButton /> client boundary.
+ *
+ * Props passed to Client Component:
+ * - Purely serializable primitives (productId, productName, price).
+ */
 export function ProductList({ products }: ProductListProps) {
   return (
     <section id="products" aria-labelledby="products-heading" className="space-y-6">
@@ -56,15 +65,12 @@ export function ProductList({ products }: ProductListProps) {
               </CardContent>
 
               <CardFooter className="pt-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-center gap-2 text-xs font-medium cursor-pointer"
-                  aria-label={`Add ${product.name} to cart`}
-                >
-                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                  Add to Cart
-                </Button>
+                {/* Client component boundary: only interactive button hydrates */}
+                <AddToCartButton
+                  productId={product.id}
+                  productName={product.name}
+                  price={product.price}
+                />
               </CardFooter>
             </Card>
           </article>

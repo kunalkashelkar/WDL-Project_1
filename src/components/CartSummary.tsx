@@ -1,9 +1,9 @@
 import React from "react";
 import { Product } from "@/data/products";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
+import { CartItemControls } from "@/components/CartItemControls";
 
 export interface CartItem {
   product: Product;
@@ -15,6 +15,18 @@ interface CartSummaryProps {
   emptyState?: boolean;
 }
 
+/**
+ * SERVER COMPONENT
+ *
+ * Why Server Component:
+ * - Computes order pricing (subtotal, tax, total) on the server without sending financial calculation code
+ *   or static markup structure to client bundles.
+ * - Renders the static card wrappers, headings, item descriptions, and totals as pure HTML.
+ * - Only the interactive quantity buttons and delete triggers delegate to the <CartItemControls /> Client Component.
+ *
+ * Props passed across the boundary:
+ * - Only primitive serializable values (productId, productName, quantity).
+ */
 export function CartSummary({ items = [], emptyState = false }: CartSummaryProps) {
   const displayItems = emptyState ? [] : items;
   const subtotal = displayItems.reduce(
@@ -47,7 +59,7 @@ export function CartSummary({ items = [], emptyState = false }: CartSummaryProps
 
         <CardContent className="pt-4">
           {displayItems.length === 0 ? (
-            /* Empty Cart State */
+            /* Empty Cart State - 100% static server-rendered HTML */
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
                 <ShoppingCart className="h-6 w-6" aria-hidden="true" />
@@ -76,51 +88,12 @@ export function CartSummary({ items = [], emptyState = false }: CartSummaryProps
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    {/* Accessible Quantity Controls */}
-                    <div
-                      role="group"
-                      aria-label={`Quantity controls for ${product.name}`}
-                      className="inline-flex items-center rounded-md border border-input bg-background"
-                    >
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        className="h-7 w-7 rounded-none rounded-l-md hover:bg-muted"
-                        aria-label={`Decrease quantity of ${product.name}`}
-                        disabled={quantity <= 1}
-                      >
-                        <Minus className="h-3 w-3" aria-hidden="true" />
-                      </Button>
-                      <span
-                        className="px-3 text-xs font-semibold tabular-nums text-foreground min-w-[28px] text-center"
-                        aria-live="polite"
-                        aria-atomic="true"
-                      >
-                        {quantity}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        className="h-7 w-7 rounded-none rounded-r-md hover:bg-muted"
-                        aria-label={`Increase quantity of ${product.name}`}
-                      >
-                        <Plus className="h-3 w-3" aria-hidden="true" />
-                      </Button>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      aria-label={`Remove ${product.name} from cart`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    </Button>
-                  </div>
+                  {/* Client Component boundary: Only quantity buttons hydrate */}
+                  <CartItemControls
+                    productId={product.id}
+                    productName={product.name}
+                    quantity={quantity}
+                  />
                 </li>
               ))}
             </ul>
