@@ -35,7 +35,7 @@ export function AddToCartButton({ productId, productName, price }: AddToCartButt
       variant="outline"
       onClick={handleAddToCart}
       className="w-full justify-center gap-2 text-xs font-medium cursor-pointer"
-      aria-label={`Add ${productName} to cart`}
+      aria-label={`Add to Cart: ${productName}`}
     >
       <Plus className="h-3.5 w-3.5" aria-hidden="true" />
       Add to Cart

@@ -19,9 +19,8 @@ export function Header() {
           <Link
             href="/"
             className="flex items-center gap-2 font-semibold text-lg tracking-tight text-foreground transition-colors hover:text-foreground/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-            aria-label="CartFlow Home"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+            <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
               CF
             </span>
             <span>CartFlow</span>
