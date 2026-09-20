@@ -1,36 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { checkoutSchema, type CheckoutFormData } from "@/lib/validations/checkout";
+import { processCheckout, type CheckoutActionResult } from "@/actions/checkout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, CheckCircle2, AlertCircle } from "lucide-react";
-import { useCartStore, selectCartItems, selectTotalItemCount } from "@/store/useCartStore";
+import { Separator } from "@/components/ui/separator";
+import { Lock, CheckCircle2, AlertCircle, Loader2, ArrowRight, RotateCcw } from "lucide-react";
+import { useCartStore, selectCartItems, selectTotalItemCount, selectClearCart } from "@/store/useCartStore";
 import { useMounted } from "@/hooks/useMounted";
 
-/**
- * CLIENT COMPONENT BOUNDARY
- *
- * Implements client-side checkout form validation with React Hook Form and Zod.
- * Connects directly to the Zustand cart store to ensure checkout is only enabled
- * when items exist in the cart.
- */
 export function CheckoutSection() {
   const mounted = useMounted();
   const cartItems = useCartStore(selectCartItems);
   const totalItemCount = useCartStore(selectTotalItemCount);
-  const [validatedData, setValidatedData] = useState<CheckoutFormData | null>(null);
+  const clearCart = useCartStore(selectClearCart);
+
+  const [isPending, startTransition] = useTransition();
+  const [serverResult, setServerResult] = useState<CheckoutActionResult | null>(null);
 
   const isCartEmpty = mounted ? cartItems.length === 0 : true;
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    setError,
+    formState: { errors },
+    reset,
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     mode: "onTouched",
@@ -44,10 +44,42 @@ export function CheckoutSection() {
     },
   });
 
-  const onSubmit = (data: CheckoutFormData) => {
-    // Demonstration of successful client-side validation only
-    // Does NOT fake a backend/database order creation
-    setValidatedData(data);
+  const onSubmit = (formData: CheckoutFormData) => {
+    // Clear any previous server feedback
+    setServerResult(null);
+
+    // Dispatch Server Action using React's useTransition
+    startTransition(async () => {
+      const payloadItems = cartItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }));
+
+      const result = await processCheckout(formData, payloadItems);
+      setServerResult(result);
+
+      if (result.success) {
+        // Clear cart after successful server checkout confirmation
+        clearCart();
+        reset();
+      } else if (result.fieldErrors) {
+        // Map authoritative server-side field errors back to React Hook Form controls
+        Object.entries(result.fieldErrors).forEach(([field, message]) => {
+          if (message) {
+            setError(field as keyof CheckoutFormData, {
+              type: "server",
+              message,
+            });
+          }
+        });
+      }
+    });
+  };
+
+  const handleStartNewOrder = () => {
+    setServerResult(null);
   };
 
   return (
@@ -67,7 +99,7 @@ export function CheckoutSection() {
             <div>
               <CardTitle className="text-sm font-medium">Customer Information</CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                Validated using React Hook Form & Zod schema.
+                Validated client-side and verified by Next.js Server Action.
               </CardDescription>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -78,33 +110,75 @@ export function CheckoutSection() {
         </CardHeader>
 
         <CardContent className="pt-5 space-y-4">
-          {/* Client-side validation preview notice */}
-          {validatedData && (
+          {/* Server Confirmation State */}
+          {serverResult?.success && (
             <div
               role="status"
-              className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-700 dark:text-emerald-300 space-y-1.5"
+              className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-800 dark:text-emerald-200 space-y-3"
             >
-              <div className="flex items-center gap-2 font-medium">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                <span>Client validation passed successfully!</span>
+              <div className="flex items-center gap-2 font-semibold text-sm text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span>Order Placed Successfully!</span>
               </div>
-              <p className="text-muted-foreground pl-6 text-[11px]">
-                Valid order for <strong>{validatedData.fullName}</strong> ({validatedData.email},{" "}
-                {validatedData.phone}) ready for Server Action submission.
-              </p>
-              <div className="pl-6 pt-1">
-                <button
+
+              <div className="rounded-md bg-background/80 p-3 space-y-1.5 border border-border text-foreground">
+                <div className="flex justify-between font-mono text-[11px]">
+                  <span className="text-muted-foreground">Order ID:</span>
+                  <span className="font-semibold">{serverResult.orderId}</span>
+                </div>
+                <div className="flex justify-between font-mono text-[11px]">
+                  <span className="text-muted-foreground">Reference:</span>
+                  <span className="font-semibold">{serverResult.referenceNumber}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Recipient:</span>
+                  <span className="font-medium">{serverResult.customerSummary?.name}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Confirmation Email:</span>
+                  <span className="font-medium">{serverResult.customerSummary?.email}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Total Charged:</span>
+                  <span className="font-bold">${serverResult.totalAmount?.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <p className="text-[11px] text-muted-foreground">
+                  The cart has been reset. You can now start another order.
+                </p>
+                <Button
                   type="button"
-                  onClick={() => setValidatedData(null)}
-                  className="text-[11px] underline hover:text-emerald-900 dark:hover:text-emerald-100"
+                  variant="outline"
+                  size="xs"
+                  onClick={handleStartNewOrder}
+                  className="gap-1 text-xs"
                 >
-                  Dismiss notice
-                </button>
+                  <RotateCcw className="h-3 w-3" />
+                  New Order
+                </Button>
               </div>
             </div>
           )}
 
-          {isCartEmpty && (
+          {/* Server Error Alert */}
+          {serverResult && !serverResult.success && serverResult.error && (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive flex items-start gap-2"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Server Action Error</p>
+                <p className="mt-0.5">{serverResult.error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Empty cart warning */}
+          {!serverResult?.success && isCartEmpty && (
             <div
               role="alert"
               className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2"
@@ -114,157 +188,178 @@ export function CheckoutSection() {
             </div>
           )}
 
-          <form
-            id="checkout-form"
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-            className="space-y-4"
-          >
-            {/* Full Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="fullName" className="text-xs font-medium">
-                Full Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Jane Doe"
-                autoComplete="name"
-                aria-invalid={Boolean(errors.fullName)}
-                aria-describedby={errors.fullName ? "fullName-error" : undefined}
-                {...register("fullName")}
-              />
-              {errors.fullName && (
-                <p id="fullName-error" role="alert" className="text-xs text-destructive mt-1">
-                  {errors.fullName.message}
-                </p>
-              )}
-            </div>
-
-            {/* Email & Phone Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Checkout Form */}
+          {!serverResult?.success && (
+            <form
+              id="checkout-form"
+              onSubmit={handleSubmit(onSubmit)}
+              noValidate
+              className="space-y-4"
+            >
+              {/* Full Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-medium">
-                  Email Address <span className="text-destructive">*</span>
+                <Label htmlFor="fullName" className="text-xs font-medium">
+                  Full Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="jane.doe@example.com"
-                  autoComplete="email"
-                  aria-invalid={Boolean(errors.email)}
-                  aria-describedby={errors.email ? "email-error" : undefined}
-                  {...register("email")}
-                />
-                {errors.email && (
-                  <p id="email-error" role="alert" className="text-xs text-destructive mt-1">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-xs font-medium">
-                  Phone Number <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="(555) 012-3456"
-                  autoComplete="tel"
-                  aria-invalid={Boolean(errors.phone)}
-                  aria-describedby={errors.phone ? "phone-error" : undefined}
-                  {...register("phone")}
-                />
-                {errors.phone && (
-                  <p id="phone-error" role="alert" className="text-xs text-destructive mt-1">
-                    {errors.phone.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Street Address */}
-            <div className="space-y-1.5">
-              <Label htmlFor="address" className="text-xs font-medium">
-                Street Address <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="address"
-                type="text"
-                placeholder="123 University Way, Apt 4B"
-                autoComplete="street-address"
-                aria-invalid={Boolean(errors.address)}
-                aria-describedby={errors.address ? "address-error" : undefined}
-                {...register("address")}
-              />
-              {errors.address && (
-                <p id="address-error" role="alert" className="text-xs text-destructive mt-1">
-                  {errors.address.message}
-                </p>
-              )}
-            </div>
-
-            {/* City & Postal Code Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="city" className="text-xs font-medium">
-                  City <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="city"
+                  id="fullName"
                   type="text"
-                  placeholder="San Jose"
-                  autoComplete="address-level2"
-                  aria-invalid={Boolean(errors.city)}
-                  aria-describedby={errors.city ? "city-error" : undefined}
-                  {...register("city")}
+                  placeholder="Jane Doe"
+                  autoComplete="name"
+                  disabled={isPending}
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? "fullName-error" : undefined}
+                  {...register("fullName")}
                 />
-                {errors.city && (
-                  <p id="city-error" role="alert" className="text-xs text-destructive mt-1">
-                    {errors.city.message}
+                {errors.fullName && (
+                  <p id="fullName-error" role="alert" className="text-xs text-destructive mt-1">
+                    {errors.fullName.message}
                   </p>
                 )}
               </div>
 
+              {/* Email & Phone Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-medium">
+                    Email Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="jane.doe@example.com"
+                    autoComplete="email"
+                    disabled={isPending}
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                    {...register("email")}
+                  />
+                  {errors.email && (
+                    <p id="email-error" role="alert" className="text-xs text-destructive mt-1">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone" className="text-xs font-medium">
+                    Phone Number <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(555) 012-3456"
+                    autoComplete="tel"
+                    disabled={isPending}
+                    aria-invalid={Boolean(errors.phone)}
+                    aria-describedby={errors.phone ? "phone-error" : undefined}
+                    {...register("phone")}
+                  />
+                  {errors.phone && (
+                    <p id="phone-error" role="alert" className="text-xs text-destructive mt-1">
+                      {errors.phone.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Street Address */}
               <div className="space-y-1.5">
-                <Label htmlFor="postalCode" className="text-xs font-medium">
-                  Postal Code <span className="text-destructive">*</span>
+                <Label htmlFor="address" className="text-xs font-medium">
+                  Street Address <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="postalCode"
+                  id="address"
                   type="text"
-                  placeholder="95192"
-                  autoComplete="postal-code"
-                  aria-invalid={Boolean(errors.postalCode)}
-                  aria-describedby={errors.postalCode ? "postalCode-error" : undefined}
-                  {...register("postalCode")}
+                  placeholder="123 University Way, Apt 4B"
+                  autoComplete="street-address"
+                  disabled={isPending}
+                  aria-invalid={Boolean(errors.address)}
+                  aria-describedby={errors.address ? "address-error" : undefined}
+                  {...register("address")}
                 />
-                {errors.postalCode && (
-                  <p id="postalCode-error" role="alert" className="text-xs text-destructive mt-1">
-                    {errors.postalCode.message}
+                {errors.address && (
+                  <p id="address-error" role="alert" className="text-xs text-destructive mt-1">
+                    {errors.address.message}
                   </p>
                 )}
               </div>
-            </div>
-          </form>
+
+              {/* City & Postal Code Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city" className="text-xs font-medium">
+                    City <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="city"
+                    type="text"
+                    placeholder="San Jose"
+                    autoComplete="address-level2"
+                    disabled={isPending}
+                    aria-invalid={Boolean(errors.city)}
+                    aria-describedby={errors.city ? "city-error" : undefined}
+                    {...register("city")}
+                  />
+                  {errors.city && (
+                    <p id="city-error" role="alert" className="text-xs text-destructive mt-1">
+                      {errors.city.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="postalCode" className="text-xs font-medium">
+                    Postal Code <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="postalCode"
+                    type="text"
+                    placeholder="95192"
+                    autoComplete="postal-code"
+                    disabled={isPending}
+                    aria-invalid={Boolean(errors.postalCode)}
+                    aria-describedby={errors.postalCode ? "postalCode-error" : undefined}
+                    {...register("postalCode")}
+                  />
+                  {errors.postalCode && (
+                    <p id="postalCode-error" role="alert" className="text-xs text-destructive mt-1">
+                      {errors.postalCode.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </form>
+          )}
         </CardContent>
 
-        <CardFooter className="pt-3 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <p className="text-xs text-muted-foreground text-center sm:text-left">
-            Client-side schema validation active. Next step will wire the Next.js Server Action.
-          </p>
-          <Button
-            type="submit"
-            form="checkout-form"
-            disabled={isCartEmpty || isSubmitting}
-            className="w-full sm:w-auto font-medium text-xs px-5 h-9 cursor-pointer"
-          >
-            {isCartEmpty
-              ? "Cart is Empty"
-              : `Place Order (${mounted ? totalItemCount : 0} items)`}
-          </Button>
-        </CardFooter>
+        {!serverResult?.success && (
+          <CardFooter className="pt-3 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <p className="text-xs text-muted-foreground text-center sm:text-left">
+              Submissions are validated server-side by Next.js Server Action.
+            </p>
+            <Button
+              type="submit"
+              form="checkout-form"
+              disabled={isCartEmpty || isPending}
+              className="w-full sm:w-auto font-medium text-xs px-5 h-9 cursor-pointer gap-2"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  <span>Processing Order...</span>
+                </>
+              ) : isCartEmpty ? (
+                "Cart is Empty"
+              ) : (
+                <>
+                  <span>Place Order ({mounted ? totalItemCount : 0} items)</span>
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </section>
   );
