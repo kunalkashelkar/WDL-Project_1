@@ -1,26 +1,22 @@
 import React from "react";
 import { Header } from "@/components/Header";
 import { ProductList } from "@/components/ProductList";
-import { CartSummary, CartItem } from "@/components/CartSummary";
+import { CartSummary } from "@/components/CartSummary";
 import { CheckoutSection } from "@/components/CheckoutSection";
 import { SAMPLE_PRODUCTS } from "@/data/products";
 
+/**
+ * SERVER COMPONENT
+ *
+ * Remains a pure React Server Component.
+ * - Does not hold or replicate Zustand store state.
+ * - Statically serves product catalog data down to <ProductList />.
+ * - Coordinates page layout without client JavaScript overhead.
+ */
 export default function Home() {
-  // Demonstration cart state (static for this step as required, no Zustand yet)
-  const sampleCartItems: CartItem[] = [
-    {
-      product: SAMPLE_PRODUCTS[0], // Ergonomic Mechanical Keyboard
-      quantity: 1,
-    },
-    {
-      product: SAMPLE_PRODUCTS[3], // Desk Mat Wool Felt & Vegan Leather
-      quantity: 1,
-    },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Header cartCount={sampleCartItems.reduce((sum, item) => sum + item.quantity, 0)} />
+      <Header />
 
       <main className="flex-1 container mx-auto max-w-6xl px-4 sm:px-6 py-8">
         {/* Intro banner */}
@@ -47,7 +43,7 @@ export default function Home() {
 
           {/* Cart & Checkout Column */}
           <aside className="lg:col-span-5 xl:col-span-5 space-y-8" aria-label="Order and Checkout sidebar">
-            <CartSummary items={sampleCartItems} />
+            <CartSummary />
             <CheckoutSection />
           </aside>
         </div>

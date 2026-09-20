@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useCartStore, selectAddItem } from "@/store/useCartStore";
 
 interface AddToCartButtonProps {
   productId: string;
@@ -13,18 +14,19 @@ interface AddToCartButtonProps {
 /**
  * CLIENT COMPONENT BOUNDARY
  *
- * Why "use client":
- * 1. Attaches an interactive onClick event handler to capture user addition to the cart.
- * 2. Will integrate directly with the client-side state store (Zustand) in the next step.
- *
- * Props crossed:
- * - Only primitive serializable values (productId, productName, price) are passed from
- *   the Server Component parent (ProductList).
+ * Subscribes ONLY to the addItem action selector from useCartStore.
+ * Since actions are stable function references, this component NEVER re-renders
+ * when other parts of the cart state (such as item counts or subtotals) change.
  */
 export function AddToCartButton({ productId, productName, price }: AddToCartButtonProps) {
+  const addItem = useCartStore(selectAddItem);
+
   const handleAddToCart = () => {
-    // Demonstration event handler - client-side state store (Zustand) will be wired here
-    console.log(`[Client] Added to cart: ${productName} (ID: ${productId}, Price: $${price})`);
+    addItem({
+      id: productId,
+      name: productName,
+      price,
+    });
   };
 
   return (

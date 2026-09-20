@@ -1,14 +1,17 @@
 import React from "react";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CartBadge } from "@/components/CartBadge";
 
-interface HeaderProps {
-  cartCount?: number;
-}
-
-export function Header({ cartCount = 2 }: HeaderProps) {
+/**
+ * SERVER COMPONENT
+ *
+ * Statically renders navbar shell, brand logo, and navigation links.
+ * Incorporates:
+ * - <ThemeToggle /> (Client Component) for theme dropdown
+ * - <CartBadge /> (Client Component) subscribed strictly to total item count
+ */
+export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -50,18 +53,8 @@ export function Header({ cartCount = 2 }: HeaderProps) {
           {/* Accessible Theme Switcher */}
           <ThemeToggle />
 
-          {/* Cart trigger / indicator */}
-          <Link
-            href="#cart"
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`View shopping cart with ${cartCount} items`}
-          >
-            <ShoppingBag className="h-4 w-4 text-foreground" aria-hidden="true" />
-            <span className="hidden sm:inline">Cart</span>
-            <Badge variant="secondary" className="px-1.5 py-0 text-xs">
-              {cartCount}
-            </Badge>
-          </Link>
+          {/* Connected Cart Indicator Badge */}
+          <CartBadge />
         </div>
       </div>
     </header>

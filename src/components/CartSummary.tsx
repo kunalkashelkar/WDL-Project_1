@@ -1,50 +1,67 @@
+"use client";
+
 import React from "react";
-import { Product } from "@/data/products";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, RotateCcw } from "lucide-react";
 import { CartItemControls } from "@/components/CartItemControls";
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
-interface CartSummaryProps {
-  items?: CartItem[];
-  emptyState?: boolean;
-}
+import {
+  useCartStore,
+  selectCartItems,
+  selectSubtotal,
+  selectClearCart,
+} from "@/store/useCartStore";
+import { useMounted } from "@/hooks/useMounted";
 
 /**
- * SERVER COMPONENT
+ * CLIENT COMPONENT BOUNDARY
  *
- * Why Server Component:
- * - Computes order pricing (subtotal, tax, total) on the server without sending financial calculation code
- *   or static markup structure to client bundles.
- * - Renders the static card wrappers, headings, item descriptions, and totals as pure HTML.
- * - Only the interactive quantity buttons and delete triggers delegate to the <CartItemControls /> Client Component.
+ * Subscribes to:
+ * - selectCartItems (item array)
+ * - selectSubtotal (computed order cost)
+ * - selectClearCart (action to empty cart)
  *
- * Props passed across the boundary:
- * - Only primitive serializable values (productId, productName, quantity).
+ * Hydration handling:
+ * - Uses `useMounted` to guard against hydration discrepancies between server HTML (empty cart)
+ *   and localStorage-persisted cart state on the client.
  */
-export function CartSummary({ items = [], emptyState = false }: CartSummaryProps) {
-  const displayItems = emptyState ? [] : items;
-  const subtotal = displayItems.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
-    0
-  );
-  const tax = subtotal > 0 ? subtotal * 0.08 : 0;
-  const total = subtotal + tax;
+export function CartSummary() {
+  const mounted = useMounted();
+  const items = useCartStore(selectCartItems);
+  const subtotal = useCartStore(selectSubtotal);
+  const clearCart = useCartStore(selectClearCart);
+
+  // Before hydration on the client, render an empty state or skeleton that matches SSR exactly
+  const displayItems = mounted ? items : [];
+  const displaySubtotal = mounted ? subtotal : 0;
+  const tax = displaySubtotal > 0 ? displaySubtotal * 0.08 : 0;
+  const total = displaySubtotal + tax;
 
   return (
     <section id="cart" aria-labelledby="cart-heading" className="space-y-4">
-      <div>
-        <h2 id="cart-heading" className="text-xl font-semibold tracking-tight text-foreground">
-          Order Summary
-        </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Review items in your cart before checking out.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 id="cart-heading" className="text-xl font-semibold tracking-tight text-foreground">
+            Order Summary
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Review items in your cart before checking out.
+          </p>
+        </div>
+        {displayItems.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            onClick={clearCart}
+            className="text-xs text-muted-foreground hover:text-destructive gap-1.5 cursor-pointer"
+            aria-label="Clear all items from shopping cart"
+          >
+            <RotateCcw className="h-3 w-3" aria-hidden="true" />
+            Clear
+          </Button>
+        )}
       </div>
 
       <Card className="border-border shadow-xs">
@@ -59,7 +76,7 @@ export function CartSummary({ items = [], emptyState = false }: CartSummaryProps
 
         <CardContent className="pt-4">
           {displayItems.length === 0 ? (
-            /* Empty Cart State - 100% static server-rendered HTML */
+            /* Empty Cart State */
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground mb-3">
                 <ShoppingCart className="h-6 w-6" aria-hidden="true" />
@@ -72,27 +89,27 @@ export function CartSummary({ items = [], emptyState = false }: CartSummaryProps
           ) : (
             /* Cart Item List */
             <ul className="divide-y divide-border/60" aria-label="Cart items list">
-              {displayItems.map(({ product, quantity }) => (
-                <li key={product.id} className="py-3.5 first:pt-0 last:pb-0 flex flex-col gap-2">
+              {displayItems.map((item) => (
+                <li key={item.id} className="py-3.5 first:pt-0 last:pb-0 flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-0.5 min-w-0">
                       <h3 className="text-sm font-medium text-foreground truncate">
-                        {product.name}
+                        {item.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        ${product.price.toFixed(2)} each
+                        ${item.price.toFixed(2)} each
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-foreground shrink-0">
-                      ${(product.price * quantity).toFixed(2)}
+                      ${(item.price * item.quantity).toFixed(2)}
                     </span>
                   </div>
 
-                  {/* Client Component boundary: Only quantity buttons hydrate */}
+                  {/* Quantity and removal controls */}
                   <CartItemControls
-                    productId={product.id}
-                    productName={product.name}
-                    quantity={quantity}
+                    productId={item.id}
+                    productName={item.name}
+                    quantity={item.quantity}
                   />
                 </li>
               ))}
@@ -105,11 +122,15 @@ export function CartSummary({ items = [], emptyState = false }: CartSummaryProps
             <dl className="w-full space-y-1.5 text-xs">
               <div className="flex justify-between text-muted-foreground">
                 <dt>Subtotal</dt>
-                <dd className="tabular-nums font-medium text-foreground">${subtotal.toFixed(2)}</dd>
+                <dd className="tabular-nums font-medium text-foreground">
+                  ${displaySubtotal.toFixed(2)}
+                </dd>
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <dt>Estimated Tax (8%)</dt>
-                <dd className="tabular-nums font-medium text-foreground">${tax.toFixed(2)}</dd>
+                <dd className="tabular-nums font-medium text-foreground">
+                  ${tax.toFixed(2)}
+                </dd>
               </div>
               <Separator className="my-1.5" />
               <div className="flex justify-between text-sm font-semibold text-foreground">
