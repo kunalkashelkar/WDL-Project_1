@@ -1,8 +1,8 @@
 import React from "react";
 import Link from "next/link";
-import { ShoppingBag, Sun, Moon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface HeaderProps {
   cartCount?: number;
@@ -47,19 +47,8 @@ export function Header({ cartCount = 2 }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Theme toggle placeholder */}
-          <Button
-            variant="outline"
-            size="icon"
-            type="button"
-            aria-label="Toggle visual theme (placeholder for next-themes)"
-            className="h-9 w-9 text-muted-foreground"
-            title="Theme toggle (placeholder)"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" aria-hidden="true" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" aria-hidden="true" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>
+          {/* Accessible Theme Switcher */}
+          <ThemeToggle />
 
           {/* Cart trigger / indicator */}
           <Link
