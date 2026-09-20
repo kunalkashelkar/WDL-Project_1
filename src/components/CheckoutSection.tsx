@@ -121,25 +121,25 @@ export function CheckoutSection() {
       </div>
 
       <Card className="border-border/80 bg-card/90 shadow-2xs backdrop-blur-xs">
-        <CardHeader className="pb-3 border-b border-border/60 bg-muted/20">
+        <CardHeader className="p-6 pb-4 border-b border-border/60 bg-muted/10">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
                 <span className="h-2 w-2 rounded-full bg-primary" />
                 <span>Customer Information</span>
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                Validated client-side and verified by Next.js Server Action.
+                Shipping and contact details for order fulfillment.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded-md border border-border/50">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background px-2.5 py-1 rounded-md border border-border/60">
               <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
               <span className="font-medium">SSL 256-bit</span>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-5 space-y-4">
+        <CardContent className="p-6 space-y-4">
           {/* Server Confirmation State */}
           {serverResult?.success && (
             <div
@@ -228,7 +228,7 @@ export function CheckoutSection() {
             >
               {/* Full Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="fullName" className="text-xs font-medium">
+                <Label htmlFor="fullName" className="text-xs font-semibold text-foreground">
                   Full Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -251,7 +251,7 @@ export function CheckoutSection() {
               {/* Email & Phone Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-xs font-medium">
+                  <Label htmlFor="email" className="text-xs font-semibold text-foreground">
                     Email Address <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -272,7 +272,7 @@ export function CheckoutSection() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-xs font-medium">
+                  <Label htmlFor="phone" className="text-xs font-semibold text-foreground">
                     Phone Number <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -295,7 +295,7 @@ export function CheckoutSection() {
 
               {/* Street Address */}
               <div className="space-y-1.5">
-                <Label htmlFor="address" className="text-xs font-medium">
+                <Label htmlFor="address" className="text-xs font-semibold text-foreground">
                   Street Address <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -318,7 +318,7 @@ export function CheckoutSection() {
               {/* City & Postal Code Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="city" className="text-xs font-medium">
+                  <Label htmlFor="city" className="text-xs font-semibold text-foreground">
                     City <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -339,7 +339,7 @@ export function CheckoutSection() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="postalCode" className="text-xs font-medium">
+                  <Label htmlFor="postalCode" className="text-xs font-semibold text-foreground">
                     Postal Code <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -364,16 +364,16 @@ export function CheckoutSection() {
         </CardContent>
 
         {!serverResult?.success && (
-          <CardFooter className="pt-3 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <CardFooter className="p-6 pt-4 border-t border-border/60 bg-muted/10 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <p className="text-xs text-muted-foreground text-center sm:text-left">
-              Submissions are validated server-side by Next.js Server Action.
+              Submissions are securely verified server-side by Next.js Server Action.
             </p>
             <Button
               type="submit"
               form="checkout-form"
               size="lg"
               disabled={isCartEmpty || isPending}
-              className="w-full sm:w-auto font-semibold text-xs sm:text-sm px-6 cursor-pointer gap-2 shadow-sm hover:shadow-md"
+              className="w-full sm:w-auto font-semibold text-xs sm:text-sm px-7 cursor-pointer gap-2 shadow-xs hover:shadow-md transition-all"
             >
               {isPending ? (
                 <>
@@ -384,7 +384,7 @@ export function CheckoutSection() {
                 "Cart is Empty"
               ) : (
                 <>
-                  <span>Place Order ({mounted ? totalItemCount : 0} items)</span>
+                  <span>Place Order ({mounted ? totalItemCount : 0} {totalItemCount === 1 ? "item" : "items"})</span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </>
               )}
