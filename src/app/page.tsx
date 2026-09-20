@@ -1,17 +1,18 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Header } from "@/components/Header";
 import { ProductList } from "@/components/ProductList";
 import { CartSummary } from "@/components/CartSummary";
+import { CartSummarySkeleton } from "@/components/CartSummarySkeleton";
 import { CheckoutSection } from "@/components/CheckoutSection";
 import { SAMPLE_PRODUCTS } from "@/data/products";
 
 /**
  * SERVER COMPONENT
  *
- * Remains a pure React Server Component.
- * - Does not hold or replicate Zustand store state.
- * - Statically serves product catalog data down to <ProductList />.
- * - Coordinates page layout without client JavaScript overhead.
+ * Demonstrates React Server Component architecture:
+ * - Statically prerenders catalog and page shell.
+ * - Employs a React <Suspense> boundary with a dedicated Skeleton fallback around <CartSummary />
+ *   to establish an asynchronous client hydration boundary.
  */
 export default function Home() {
   return (
@@ -41,9 +42,11 @@ export default function Home() {
             <ProductList products={SAMPLE_PRODUCTS} />
           </div>
 
-          {/* Cart & Checkout Column */}
+          {/* Cart & Checkout Column with Suspense Boundary */}
           <aside className="lg:col-span-5 xl:col-span-5 space-y-8" aria-label="Order and Checkout sidebar">
-            <CartSummary />
+            <Suspense fallback={<CartSummarySkeleton />}>
+              <CartSummary />
+            </Suspense>
             <CheckoutSection />
           </aside>
         </div>

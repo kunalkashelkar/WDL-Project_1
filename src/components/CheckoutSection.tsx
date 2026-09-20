@@ -14,6 +14,8 @@ import { Lock, CheckCircle2, AlertCircle, Loader2, ArrowRight, RotateCcw } from 
 import { useCartStore, selectCartItems, selectTotalItemCount, selectClearCart } from "@/store/useCartStore";
 import { useMounted } from "@/hooks/useMounted";
 
+import { toast } from "sonner";
+
 export function CheckoutSection() {
   const mounted = useMounted();
   const cartItems = useCartStore(selectCartItems);
@@ -45,34 +47,59 @@ export function CheckoutSection() {
   });
 
   const onSubmit = (formData: CheckoutFormData) => {
+    // Prevent duplicate submissions if already pending
+    if (isPending) return;
+
     // Clear any previous server feedback
     setServerResult(null);
 
     // Dispatch Server Action using React's useTransition
     startTransition(async () => {
-      const payloadItems = cartItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      }));
+      try {
+        const payloadItems = cartItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        }));
 
-      const result = await processCheckout(formData, payloadItems);
-      setServerResult(result);
+        const result = await processCheckout(formData, payloadItems);
+        setServerResult(result);
 
-      if (result.success) {
-        // Clear cart after successful server checkout confirmation
-        clearCart();
-        reset();
-      } else if (result.fieldErrors) {
-        // Map authoritative server-side field errors back to React Hook Form controls
-        Object.entries(result.fieldErrors).forEach(([field, message]) => {
-          if (message) {
-            setError(field as keyof CheckoutFormData, {
-              type: "server",
-              message,
+        if (result.success) {
+          // Success feedback: Trigger accessible toast & reset store
+          toast.success("Order Placed Successfully!", {
+            description: `Reference: ${result.referenceNumber} — A receipt has been sent to ${result.customerSummary?.email}.`,
+          });
+          clearCart();
+          reset();
+        } else {
+          // Validation / Controlled business failure: Toast alert & map errors
+          toast.error("Checkout Failed", {
+            description: result.error || "Please review your inputs and try again.",
+          });
+
+          if (result.fieldErrors) {
+            Object.entries(result.fieldErrors).forEach(([field, message]) => {
+              if (message) {
+                setError(field as keyof CheckoutFormData, {
+                  type: "server",
+                  message,
+                });
+              }
             });
           }
+        }
+      } catch (err) {
+        // Unexpected server-side failure: sanitized user-friendly error without leaking sensitive details
+        console.error("Unexpected checkout error:", err);
+        const genericMessage = "An unexpected error occurred while processing your order. Please try again later.";
+        setServerResult({
+          success: false,
+          error: genericMessage,
+        });
+        toast.error("Order Processing Error", {
+          description: genericMessage,
         });
       }
     });
